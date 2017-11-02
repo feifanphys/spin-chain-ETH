@@ -17,6 +17,8 @@ T = 4
 sigx = [[0,1],[1,0]]
 sigy = [[0,-1j],[1j,0]]
 sigz = [[1,0],[0,-1]]
+sup = [[0,1],[0,0]]
+sdown = [[0,0],[1,0]]
 
 print 'The ',size,' spin chain with dimension ',dim,' Hilbert space.'
 
@@ -114,11 +116,12 @@ def matelt(a,b):
             product = product * np.transpose(brav[(i+j)%size]).dot(ketv[(i+j)%size])
         a = (i-2)%size
         b = (i-1)%size
-        interactionx = (-0.5)*(np.transpose(brav[a]).dot(sigx).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigx).dot(ketv[b]))
+        interactionx = (-0.4)*(np.transpose(brav[a]).dot(sigx).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigx).dot(ketv[b]))
         interactiony = (-0.5)*(np.transpose(brav[a]).dot(sigy).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigy).dot(ketv[b]))
-        interactionz = (-0.5)*(np.transpose(brav[a]).dot(sigz).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigz).dot(ketv[b]))
+        interactionz = (-0.6)*(np.transpose(brav[a]).dot(sigz).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigz).dot(ketv[b]))
         interaction = interactionx + interactiony + interactionz
         product = product * interaction
+        #if b!=0:    
         element = element + product
     return element
 
@@ -237,7 +240,57 @@ def spechisto(eigenvalues):
     plt.ylabel('# of states')
     plt.grid(True)
     plt.show()
-    
+
+
+def statetoraw(state):
+    raw = 0
+    for i in range(0,size):
+        if state[0][i] > 0.5:
+            raw = raw + 2**(size-i-1)
+    return raw
+
+def mk(raw):
+    transstate = np.empty(dim,dtype=complex)
+    value = 0
+    vector = np.empty((2,size))
+    vector2 = np.empty((size,2))
+    for u in range (0,dim):
+        vector = states(u+1)
+        vector2 = np.transpose(vector)
+        factor = 1
+        #print 'for u = ', u
+        #print np.transpose(vector2)
+        for l in range(0,size):
+            if vector2[l][0] > 0.5:
+                factor = factor * (-1)
+        for i in range(0,size):
+            if vector2[i][0] < 0.5:
+                continue
+            
+            for k in range(0,size):
+                if i == k:
+                    temp = u
+                    transstate[temp] = transstate[temp] + raw[u]
+                    #print 'i,k = ',i,',',k, 'is nontrivial'
+                if (vector2[k][0] > 0.5) :
+                    continue
+                phase = 1
+                for p in range(min(i,k),max(i,k)):
+                    if vector2[p][0] > 0.5:
+                        phase = phase * (-1)
+
+                        
+                #print 'i,k = ',i,',',k, 'is nontrivial'
+                temp = u - 2**(size-i-1) + 2**(size-k-1)
+                #if factor < 0:
+                    #phase = phase * np.exp(1j * (k-i) *(np.pi)/size)
+                transstate[temp] = transstate[temp] + raw[u] 
+    #print raw
+    #print transstate
+    value = np.transpose(np.conj(raw)).dot(transstate)
+
+    return value
+        
 #######################above is the framework of a spin chain################################
 
 #dealing with N>8 ,too slow for exact diagonalization
@@ -290,19 +343,38 @@ print '#############################################'
     #plotsigmaZ(vTnew[i])
 
 #denT(wnew.real,T,vT)
-
+b=200
 print 'Now using the lanczos algorithm..............'
-h,j = sla.eigs(energy,50,which='SR')
+h,j = sla.eigs(energy,b,which='SR')
 idx = h.real.argsort()
 hnew = h[idx]
 jnew = j[:,idx]
 jTnew = np.transpose(jnew)
 
 
-#print hnew.real
-#for i in range (0,50):
-    #print 'For the state with energy E = ',hnew[i].real,' :'
+print hnew.real
+
+nn = np.empty(b)
+mm = np.empty(b)
+for i in range (0,b):
+    print i,') For the state with energy E = ',hnew[i].real,' :'
+    print 'The vector is :'
+    print jTnew[i]
+    #print np.transpose(np.conj(jTnew[i])).dot(jTnew[i])
+    uni = mk(jTnew[i])
+    print 'The expectation value of m(k=0) is:', uni
+    nn[i] = hnew[i].real
+    mm[i] = uni
     #plotsigmaZ(jTnew[i],hnew[i].real,i)
 
+plt.plot(nn,mm,'ro')
+plt.show()    
 start2 = time.time()
+
+#ggggg = [[1,0,0,0,0,0,1,1],[0,1,1,1,1,1,0,0]]
+#print statetoraw(ggggg)
+#print np.exp(1j)
+#trial = np.zeros(dim)
+#trial[255]=0.5
+#print mk(trial)
 print 'Time to compute sparse eigenvalues :',start2-start1 ,' s'
