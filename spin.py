@@ -7,7 +7,7 @@ import time
 
 #defining the Hilbert space, Hamiltonian parameters, temperature, etc
 start0 = time.time()
-size = 6
+size = 10
 dim = 2**size
 energy = np.empty((dim,dim),'complex')
 J = 1
@@ -29,7 +29,26 @@ def states(n):
     f = np.zeros((2,size))
     for i in range(0,size):
         f[1][i]=1
-
+    if counter > 512.5:
+        f[0][t]=1
+        f[1][t]=0
+        counter = counter - 512
+    t = t+1
+    if counter > 256.5:
+        f[0][t]=1
+        f[1][t]=0
+        counter = counter - 256
+    t = t+1
+    if counter > 128.5:
+        f[0][t]=1
+        f[1][t]=0
+        counter = counter - 128
+    t = t+1
+    if counter > 64.5:
+        f[0][t]=1
+        f[1][t]=0
+        counter = counter - 64
+    t = t+1
     if counter > 32.5:
         f[0][t]=1
         f[1][t]=0
@@ -96,15 +115,16 @@ def matelt(a,b):
         product = 1
         for j in range (0,size-2):
             product = product * np.transpose(brav[(i+j)%size]).dot(ketv[(i+j)%size])
-        a = (i-2)%size
-        b = (i-1)%size
-        interactionx = (-0.4)*(np.transpose(brav[a]).dot(sigx).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigx).dot(ketv[b]))
-        interactiony = (-0.5)*(np.transpose(brav[a]).dot(sigy).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigy).dot(ketv[b]))
-        interactionz = (-0.6)*(np.transpose(brav[a]).dot(sigz).dot(ketv[a]))*(np.transpose(brav[b]).dot(sigz).dot(ketv[b]))
-        interaction = interactionx + interactiony + interactionz
-        product = product * interaction
-        #if b!=0:    
-        element = element + product
+        c = (i-2)%size
+        d = (i-1)%size
+        interactionx = (-0.1)*(np.transpose(brav[c]).dot(sigx).dot(ketv[c]))*(np.transpose(brav[d]).dot(sigx).dot(ketv[d]))
+        interactiony = (-0.5)*(np.transpose(brav[c]).dot(sigy).dot(ketv[c]))*(np.transpose(brav[d]).dot(sigy).dot(ketv[d]))
+        interactionz = (-0.6)*(np.transpose(brav[c]).dot(sigz).dot(ketv[c]))*(np.transpose(brav[d]).dot(sigz).dot(ketv[d]))
+ 
+        interaction = interactionx + interactiony + interactionz 
+        product = product * interaction  
+        if d!=0:
+            element = element + product
     return element
 
 #visualize a general state in 16D by a|0000> + .... + e|1111>
@@ -223,12 +243,11 @@ def mk(raw):
     for u in range (0,dim):
         vector = states(u+1)
         vector2 = np.transpose(vector)
-        factor = 1
         #print 'for u = ', u
         #print np.transpose(vector2)
-        for l in range(0,size):
-            if vector2[l][0] > 0.5:
-                factor = factor * (-1)
+        #for l in range(0,size):
+            #if vector2[l][0] > 0.5:
+                #factor = factor * (-1)
         for i in range(0,size):
             if vector2[i][0] < 0.5:
                 continue
@@ -240,17 +259,18 @@ def mk(raw):
                     #print 'i,k = ',i,',',k, 'is nontrivial'
                 if (vector2[k][0] > 0.5) :
                     continue
-                phase = 1
-                for p in range(min(i,k),max(i,k)):
-                    if vector2[p][0] > 0.5:
-                        phase = phase * (-1)
+                #phase = 1
+                #for p in range(min(i,k),max(i,k)):
+                #    if vector2[p][0] > 0.5:
+                #       phase = phase * (-1)
 
                         
                 #print 'i,k = ',i,',',k, 'is nontrivial'
                 temp = u - 2**(size-i-1) + 2**(size-k-1)
+                #temp = (u + 2**(size-k-1)) % dim
                 #if factor < 0:
                     #phase = phase * np.exp(1j * (k-i) *(np.pi)/size)
-                transstate[temp] = transstate[temp] + raw[u] 
+                transstate[temp] = transstate[temp] + raw[u]
     #print raw
     #print transstate
     for y in range(0,dim):
@@ -303,7 +323,7 @@ print ('#############################################')
     #plotsigmaZ(vTnew[i])
 
 #denT(wnew.real,T,vT)
-b=20
+b=300
 print ('Now using the lanczos algorithm..............')
 h,j = sla.eigs(energy,b,which='SR')
 idx = h.argsort()
