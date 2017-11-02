@@ -7,7 +7,7 @@ import time
 
 #defining the Hilbert space, Hamiltonian parameters, temperature, etc
 start0 = time.time()
-size = 10
+size = 6
 dim = 2**size
 energy = np.empty((dim,dim),'complex')
 J = 1
@@ -20,7 +20,7 @@ sigz = [[1,0],[0,-1]]
 sup = [[0,1],[0,0]]
 sdown = [[0,0],[1,0]]
 
-print 'The ',size,' spin chain with dimension ',dim,' Hilbert space.'
+print ('The ',size,' spin chain with dimension ',dim,' Hilbert space.')
 
 #getting states from an integer, return a 2 by n matrix represent a state such as |00...010>
 def states(n):
@@ -29,26 +29,7 @@ def states(n):
     f = np.zeros((2,size))
     for i in range(0,size):
         f[1][i]=1
-    if counter > 512.5:
-        f[0][t]=1
-        f[1][t]=0
-        counter = counter - 512
-    t = t+1
-    if counter > 256.5:
-        f[0][t]=1
-        f[1][t]=0
-        counter = counter - 256
-    t = t+1
-    if counter > 128.5:
-        f[0][t]=1
-        f[1][t]=0
-        counter = counter - 128
-    t = t+1
-    if counter > 64.5:
-        f[0][t]=1
-        f[1][t]=0
-        counter = counter - 64
-    t = t+1
+
     if counter > 32.5:
         f[0][t]=1
         f[1][t]=0
@@ -64,6 +45,7 @@ def states(n):
         f[1][t]=0
         counter = counter - 8
     t = t+1
+
     if counter > 4.5:
         f[0][t]=1
         f[1][t]=0
@@ -126,23 +108,7 @@ def matelt(a,b):
     return element
 
 #visualize a general state in 16D by a|0000> + .... + e|1111>
-def visual(raw):
-    np.set_printoptions(precision=3)
-    np.set_printoptions(suppress=True)
-    temp = raw
-    print 'The vector corresponding to this state is'
-    for j in range(0,dim):
-        vector = states(j+1)
-        print temp[j],
-        print ' |',
-        for i in range(0,size):
-            if vector[0][i] > 0.5:
-                print 1,
-            else:
-                print 0,
-                    
-        print '> +',
-    print '####'
+
 
 #plot the sigma z of a state
 def plotsigmaZ(raw,e,k):
@@ -156,14 +122,14 @@ def plotsigmaZ(raw,e,k):
                 y[i] = y[i] + (np.absolute(raw[j]))**2
             else:
                 y[i] = y[i] - (np.absolute(raw[j]))**2
-    print 'The spin z of this state is :'
+    print ('The spin z of this state is :')
     plt.clf()
     plt.xlabel('position')
     plt.ylabel(r'<$\sigma_z$>')
     plt.ylim(-1,1)
     plt.title('Low energy state E = '+ str(e))
     plt.plot(x,y,'ro')
-    name = 'C:\ProSpin\pic\N='+str(size)+'_E='+str(e)+'_#'+str(k)+'.png'
+    name = 'gg.png'
     plt.savefig(name)
     #plt.show()
 
@@ -197,14 +163,14 @@ def denT(eigenvalues,T,vvv):
             y[j] = y[j] + sigmaZ(vvv[i])[j] * tmp
     for k in range(0,size):
         y[k] = y[k]/Z
-    print 'The average spin z when T = ',T,' is: '
+    print ('The average spin z when T = ',T,' is: ')
     plt.ylim(-1,1)
     plt.plot(x,y,'rx')
     plt.xlabel('position')
     plt.ylabel('<spin z>')
     plt.show()    
     Eav = E/Z
-    print 'The average energy of T = ',T,' is <E>(T) = ', Eav.real
+    print ('The average energy of T = ',T,' is <E>(T) = ', Eav.real)
 
 #calulate the energy average correspond to T
 def EvT(eigenvalues,T):
@@ -250,7 +216,7 @@ def statetoraw(state):
     return raw
 
 def mk(raw):
-    transstate = np.empty(dim,dtype=complex)
+    transstate = np.zeros(dim,dtype=complex)
     value = 0
     vector = np.empty((2,size))
     vector2 = np.empty((size,2))
@@ -287,24 +253,18 @@ def mk(raw):
                 transstate[temp] = transstate[temp] + raw[u] 
     #print raw
     #print transstate
-    value = np.transpose(np.conj(raw)).dot(transstate)
+    for y in range(0,dim):
+        value = value + transstate[y] * raw[y].conjugate()
 
     return value
         
 #######################above is the framework of a spin chain################################
 
-#dealing with N>8 ,too slow for exact diagonalization
-def lanzcos():
-    print 'haha'
-
-#observable n(k) defined as ...   
-def nk():
-    print 'haha'
 
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)
 
-print 'Now calculating the matrix elements...'
+print ('Now calculating the matrix elements...')
 for i in range(0,dim):
     for j in range(0,dim):
         energy[i][j] = matelt(i+1,j+1)
@@ -312,12 +272,12 @@ for i in range(0,dim):
 
 
 
-print energy
+print (energy)
 start1 = time.time()
-print 'Time to compute matrix element :',start1-start0,' s'
+print ('Time to compute matrix element :',start1-start0,' s')
 
 
-print "#############eigenvalues########################"
+print ("#############eigenvalues########################")
 #w,v = LA.eig(energy)
 #vT=np.transpose(v)
 #idx = w.real.argsort()
@@ -332,7 +292,7 @@ print "#############eigenvalues########################"
 
 
 
-print '#############################################'
+print ('#############################################')
 #visual(vT[4])
 #for i in range(0,10):
     #plotsigmaZ(vT[i])
@@ -343,26 +303,31 @@ print '#############################################'
     #plotsigmaZ(vTnew[i])
 
 #denT(wnew.real,T,vT)
-b=200
-print 'Now using the lanczos algorithm..............'
+b=20
+print ('Now using the lanczos algorithm..............')
 h,j = sla.eigs(energy,b,which='SR')
-idx = h.real.argsort()
+idx = h.argsort()
 hnew = h[idx]
 jnew = j[:,idx]
 jTnew = np.transpose(jnew)
 
 
-print hnew.real
+print (hnew.real)
 
 nn = np.empty(b)
 mm = np.empty(b)
 for i in range (0,b):
-    print i,') For the state with energy E = ',hnew[i].real,' :'
-    print 'The vector is :'
-    print jTnew[i]
+    value = 0
+    print (i,') For the state with energy E = ',hnew[i].real,' :')
+    print ('The vector is :')
+    
+    for y in range (0,dim):
+        value = value + jTnew[i][y].conjugate() * jTnew[i][y]
+    print ('The norm is ', value)
     #print np.transpose(np.conj(jTnew[i])).dot(jTnew[i])
     uni = mk(jTnew[i])
-    print 'The expectation value of m(k=0) is:', uni
+    print ('The expectation value of m(k=0) is:', uni)
+    #print (jTnew[i])
     nn[i] = hnew[i].real
     mm[i] = uni
     #plotsigmaZ(jTnew[i],hnew[i].real,i)
@@ -377,4 +342,4 @@ start2 = time.time()
 #trial = np.zeros(dim)
 #trial[255]=0.5
 #print mk(trial)
-print 'Time to compute sparse eigenvalues :',start2-start1 ,' s'
+print ('Time to compute sparse eigenvalues :',start2-start1 ,' s')
